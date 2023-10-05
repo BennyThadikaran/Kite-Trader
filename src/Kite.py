@@ -7,20 +7,16 @@ from Throttle import Throttle
 
 throttle_config = {
     'quote': {
-        'count': 0,
         'rps': 1,
     },
     'historical': {
-        'count': 0,
         'rps': 3,
     },
     'order': {
-        'count': 0,
         'rps': 8,
         'rpm': 180,
     },
     'default': {
-        'count': 0,
         'rps': 8,
     }
 }
@@ -88,7 +84,7 @@ class Kite:
 
     def __init__(self, credentials_path=None, enctoken=None):
 
-        self.cookie_path = self.base_dir / 'cookies'
+        self.cookie_path = self.base_dir / 'kite_cookies'
         self.enctoken = enctoken
         self.session = Session()
 
@@ -164,6 +160,7 @@ class Kite:
             return r
 
         code = r.status_code
+
         if code == 429:
             if th.penalise():
                 raise RuntimeError('Too many API rate limit warnings.')

@@ -162,4 +162,4 @@ cython_debug/
 bin/
 lib64
 pyvenv.cfg
-src/cookies
+src/kite_cookies

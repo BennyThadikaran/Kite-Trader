@@ -13,6 +13,7 @@ class Throttle:
 
         for d in config.values():
             d['start'] = ts
+            d['count'] = 0
 
         self.max_penalty_count = max_penalty_count
         self.config = config

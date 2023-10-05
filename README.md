@@ -31,8 +31,6 @@ kite.close()
 
 ## Login
 
-`kite = Kite()`
-
 On first initialization, Kite will check for user authentication. If no arguments are provided, the script prompts for username, password, and OTP.
 
 On successful login, an `enctoken` is generated and stored in a cookie file.
@@ -40,6 +38,12 @@ On successful login, an `enctoken` is generated and stored in a cookie file.
 If the cookie file exists on subsequent initialization, the `enctoken` is reused, eliminating the need to log in again.
 
 This method will logout all Kite web (browser) sessions. (You can continue to use the Kite Mobile App).
+
+You can reuse the browser `enctoken`, passing it to Kite. This way, you can use Kite without getting logged out.
+
+`kite = Kite(enctoken='<token string>')`
+
+To access the browser `enctoken`, login to kite.zerodha.com and press `SHIFT + F9` to open the Storage inspector (On Firefox). You will find the info under cookies.
 
 **Passing credentials file path**
 
@@ -54,22 +58,14 @@ You could store your username and password in a JSON file and pass the file path
 }
 ```
 
-**WARNING**: Do not store the credentials.json in the repository folder or on your Desktop. Do not use this option unless you alone have access to the computer.
+**WARNING**: Do not store the credentials.json in the repository folder or on your Desktop. Do not use this option, unless you have sole access to the computer.
 There is always the risk of exposing your credentials.
-
-**Passing a enctoken**
-
-You can reuse the browser `enctoken`, passing it to Kite. This way, you can use Kite-Trader without getting logged out.
-
-`kite = Kite(enctoken='<token string>')`
-
-To access the browser `enctoken`, login to kite.zerodha.com and press `SHIFT + F9` to open the Storage inspector (On Firefox). You will find the info under cookies.
 
 ## Available Methods
 
 Almost all methods defined on the Kite Connect 3 api have been covered except Webhooks and Websocket streaming. You can refer to the [Kite Connect Docs](https://kite.trade/docs/connect/v3/) for more information
 
-**NOTE** The methods may return None in case of API or network errors. Be sure take this into consideration when writing your scripts.
+**NOTE** The methods may return `None` in case of API or network errors. Be sure take this into consideration when writing your scripts.
 
 ```python
 # User
@@ -190,7 +186,9 @@ instrument_token = df.loc['INFY', 'instrument_token']
 ```
 
 ### Constants
+
 The below contants have been defined on the Kite class. You can use them as arguments to the various methods.
+
 ```python
 # Exchanges
 EXCHANGE_NSE = "NSE"
@@ -243,14 +241,33 @@ GTT_TYPE_SINGLE = "single"
 ```
 
 ### API limits and Throttling
+
 When making large number of requests its essential to respect the [API limits set by Zerodha](https://kite.trade/docs/connect/v3/exceptions/#api-rate-limit).
 
-The Throttle class ensures you do not exceed these limits.
+The Throttle class ensures you do not exceed these limits. Its takes two arguments - a dictionary configuration and an integer max_penalty_count.
 
-In the `Kite.py` file you will find the `throttle_config` dictionary which defines the limits. I have set the limits conservatively. You can free to experiment with these values.
+The `max_penalty_count` is maximum number of 429 HTTP error code, allowed to be returned during a session. Exceeding this limit will result in a runtime error.
 
-Here, `RPS` stands for requests per second and`RPM` stands for requests per minute. Limits are set for each end point.
+The configuration is a dictionary which defines the limits for each endpoint. Here, `RPS` stands for Requests Per Second and`RPM` stands for Requests Per Minute. Limits are set for each end point.
 
-When the API limits are exceeded, a 429 HTTP status code is returned. If the limits are exceeded too many times during the lifetime of a session, a runtime error is thrown.
+```python
+throttle_config = {
+    'quote': {
+        'rps': 1,
+    },
+    'historical': {
+        'rps': 3,
+    },
+    'order': {
+        'rps': 8,
+        'rpm': 180,
+    },
+    'default': {
+        'rps': 8,
+    }
+}
 
-Current limit is 15.
+max_penalty_count = 15
+
+th = Throttle(throttle_config, max_penalty_count)
+```
