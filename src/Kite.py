@@ -4,6 +4,7 @@ from pathlib import Path
 from pickle import loads as pickle_loads, dumps as pickle_dumps
 from json import loads as json_loads
 from Throttle import Throttle
+from datetime import datetime
 
 throttle_config = {
     'quote': {
@@ -116,10 +117,10 @@ class Kite:
     def __exit__(self, exc_type, exc_value, exc_trace):
         self.session.close()
 
-        if not exc_type is None:
-            print(f'{exc_type}: {exc_value} | {exc_trace}')
+        if exc_type is None:
+            return True
 
-        return True
+        exit(f'{exc_type}: {exc_value} | {exc_trace}')
 
     def close(self):
         '''Close the Requests session'''
@@ -362,8 +363,8 @@ class Kite:
 
     def historical_data(self,
                         instrument_token: str,
-                        from_dt: str,
-                        to_dt: str,
+                        from_dt: datetime,
+                        to_dt: datetime,
                         interval: str,
                         continuous=False,
                         oi=False):
