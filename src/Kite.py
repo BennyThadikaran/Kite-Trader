@@ -108,6 +108,7 @@ class Kite:
             self.session.headers.update({
                 'Authorization': f'enctoken {self.enctoken}'
             })
+            self.session.cookies.update(self.cookies)
         else:
             self._check_auth(credentials_path)
 
@@ -154,10 +155,6 @@ class Kite:
             raise TimeoutError(f'{hint} | Request timed out')
 
         if r.ok:
-            if self.cookies is None:
-                self.cookie_path.write_bytes(pickle_dumps(r.cookies))
-                self._set_cookie(r.cookies)
-
             return r
 
         code = r.status_code
@@ -212,6 +209,8 @@ class Kite:
 
         if res:
             self.enctoken = res.cookies['enctoken']
+
+            self._set_cookie(res.cookies)
 
             self.session.headers.update({
                 'authorization': f'enctoken {self.enctoken}'
