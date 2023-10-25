@@ -6,14 +6,12 @@ If you :heart: my work so far, please :star2: this repo.
 
 ## Installation
 
-Download or clone the repository.
-
-Install the dependencies: `pip install requests`
+`pip install kitetrader`
 
 ## Usage
 
 ```python
-from Kite import Kite
+from kitetrader import Kite
 
 # Using with statement (context manager)
 with Kite() as kite:
@@ -46,20 +44,7 @@ You can reuse the browser `enctoken`, passing it to Kite. This way, you can use 
 To access the browser `enctoken`, login to kite.zerodha.com and press `SHIFT + F9` to open the Storage inspector (On Firefox). You will find the info under cookies.
 
 **Passing credentials file path**
-
-You could store your username and password in a JSON file and pass the file path as an argument to Kite. You will only need to input the OTP.
-
-`kite = Kite(credentials_path='/home/Ashok/.config/Kite/credentials.json')`
-
-```json
-{
-  "user_id": "<YOUR USER ID>",
-  "password": "<YOUR PASSWORD>"
-}
-```
-
-**WARNING**: Do not store the credentials.json in the repository folder or on your Desktop. Do not use this option, unless you have sole access to the computer.
-There is always the risk of exposing your credentials.
+Credentials file is no longer supported. Storing plain text passwords in a file, could be unsafe.
 
 ## Available Methods
 
@@ -117,7 +102,7 @@ kite.ltp(instruments) # Last traded price of all instruments
 ### Historical Candle data
 
 ```python
-from Kite import Kite
+from kitetrader import Kite
 from pandas import DataFrame, to_datetime
 from datetime import datetime
 
@@ -159,7 +144,7 @@ df.to_csv(kite.base_dir / 'BANKNIFTY_OCT_FUT.csv')
 Instruments method will return a dump of all tradable instruments. This is a large file of 7MB with 10k+ records. Only download what is required by specifying the exchange.
 
 ```python
-from Kite import Kite
+from kitetrader import Kite
 from io import BytesIO
 from pandas import read_csv
 

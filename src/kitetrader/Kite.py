@@ -2,8 +2,7 @@ from requests import Session
 from requests.exceptions import ReadTimeout
 from pathlib import Path
 from pickle import loads as pickle_loads, dumps as pickle_dumps
-from json import loads as json_loads
-from Throttle import Throttle
+from mthrottle import Throttle
 from datetime import datetime
 
 throttle_config = {
@@ -83,7 +82,7 @@ class Kite:
     cookies = None
     config = None
 
-    def __init__(self, credentials_path=None, enctoken=None):
+    def __init__(self, enctoken=None):
 
         self.cookie_path = self.base_dir / 'kite_cookies'
         self.enctoken = enctoken
@@ -110,7 +109,7 @@ class Kite:
             })
             self.session.cookies.update(self.cookies)
         else:
-            self._check_auth(credentials_path)
+            self._check_auth()
 
     def __enter__(self):
         return self
@@ -218,31 +217,19 @@ class Kite:
 
             print('Authorization Succces')
 
-    def _check_auth(self, credentials_path):
-        if credentials_path is None:
-            self.credentials = None
-        else:
-            credentials_path = Path(credentials_path)
-
-            if credentials_path.exists():
-                self.config = json_loads(credentials_path.read_bytes())
-
+    def _check_auth(self):
         if self.cookies is None:
             print('Authorization required')
 
-            if self.config is None:
-                user_id = input('Enter User id\n> ')
-                pwd = input('Enter Password\n> ')
-            else:
-                user_id = self.config['user_id']
-                pwd = self.config['password']
+            user_id = input('Enter User id\n> ')
+            pwd = input('Enter Password\n> ')
 
             self._authorize(user_id, pwd)
 
     def instruments(self, exchange=None):
         '''return a CSV dump of all tradable instruments'''
 
-        th.check('default')
+        th.check()
         url = f'{self.base_url}/instruments'
 
         if exchange:
@@ -306,7 +293,7 @@ class Kite:
     def holdings(self):
         '''Return the list of long term equity holdings'''
 
-        th.check('default')
+        th.check()
 
         res = self._req(f'{self.base_url}/portfolio/holdings',
                         method='GET',
@@ -317,7 +304,7 @@ class Kite:
     def positions(self):
         '''Retrieve the list of short term positions'''
 
-        th.check('default')
+        th.check()
 
         res = self._req(f'{self.base_url}/portfolio/positions',
                         method='GET',
@@ -328,7 +315,7 @@ class Kite:
     def auctions(self):
         '''Retrieve the list of auctions that are currently being held'''
 
-        th.check('default')
+        th.check()
 
         res = self._req(f'{self.base_url}/portfolio/auctions',
                         method='GET',
@@ -345,7 +332,7 @@ class Kite:
         if segment:
             url += f'/{segment}'
 
-        th.check('default')
+        th.check()
 
         res = self._req(url, method='GET', hint='Margins')
 
@@ -354,7 +341,7 @@ class Kite:
     def profile(self):
         '''Retrieve the user profile'''
 
-        th.check('default')
+        th.check()
 
         res = self._req(f'{self.base_url}/user/profile', 'GET', hint='Profile')
 
@@ -485,7 +472,7 @@ class Kite:
 
         url = f'{self.base_url}/trades'
 
-        th.check('default')
+        th.check()
 
         res = self._req(url, 'GET', hint='Trades')
 
