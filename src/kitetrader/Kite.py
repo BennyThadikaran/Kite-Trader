@@ -99,16 +99,27 @@ class Kite:
 
         self.session.headers.update(headers)
 
-        if not self.enctoken and self.cookie_path.exists():
+        if self.cookie_path.exists():
             self.cookies = self._get_cookie()
-            self.enctoken = self.cookies.get('enctoken')
+
+            # get enctoken from cookies
+            cookie_token = self.cookies.get('enctoken')
+
+            # only save cookies to file if enctoken has changed
+            if enctoken and cookie_token != enctoken:
+                self._set_cookie(self.session.cookies)
+            else:
+                # else set cookie enctoken
+                self.enctoken = cookie_token
 
         if self.enctoken:
+            # Finally set Authorization headers and cookies on session
             self.session.headers.update({
                 'Authorization': f'enctoken {self.enctoken}'
             })
-            self.session.cookies.update(self.cookies)
+            # self.session.cookies.set('enctoken', self.enctoken)
         else:
+            # initiate login
             self._check_auth()
 
     def __enter__(self):
@@ -184,10 +195,13 @@ class Kite:
 
         base_url = 'https://kite.zerodha.com'
 
-        r = self._req(f'{base_url}/api/login', 'POST', payload={
+        payload = {
             'user_id': user_id,
             'password': pwd
-        }, hint='Login')
+        }
+
+        r = self._req(f'{base_url}/api/login', 'POST',
+                      payload=payload, hint='Login')
 
         if r is None:
             return
@@ -207,24 +221,23 @@ class Kite:
         }, hint='TwoFA')
 
         if res:
-            self.enctoken = res.cookies['enctoken']
+            enctoken = res.cookies['enctoken']
 
             self._set_cookie(res.cookies)
 
             self.session.headers.update({
-                'authorization': f'enctoken {self.enctoken}'
+                'authorization': f'enctoken {enctoken}'
             })
 
             print('Authorization Succces')
 
     def _check_auth(self):
-        if self.cookies is None:
-            print('Authorization required')
+        print('Authorization required')
 
-            user_id = input('Enter User id\n> ')
-            pwd = input('Enter Password\n> ')
+        user_id = input('Enter User id\n> ')
+        pwd = input('Enter Password\n> ')
 
-            self._authorize(user_id, pwd)
+        self._authorize(user_id, pwd)
 
     def instruments(self, exchange=None):
         '''return a CSV dump of all tradable instruments'''
