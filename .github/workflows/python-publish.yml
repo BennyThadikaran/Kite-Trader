@@ -1,10 +1,10 @@
-name: Publish to PyPI
+name: Publish Python 🐍 distribution 📦 to PyPI and TestPyPI
 
 on: push
 
 jobs:
   build:
-    name: Build distribution
+    name: Build distribution 📦
     runs-on: ubuntu-latest
 
     steps:
@@ -29,16 +29,16 @@ jobs:
 
   publish-to-pypi:
     name: >-
-      Publish Python distribution to PyPI
+      Publish Python 🐍 distribution 📦 to PyPI
     if: startsWith(github.ref, 'refs/tags/') # only publish to PyPI on tag pushes
     needs:
       - build
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/kitetrader
+      url: https://pypi.org/p/kitetrader # Replace <package-name> with your PyPI project name
     permissions:
-      id-token: write
+      id-token: write # IMPORTANT: mandatory for trusted publishing
 
     steps:
       - name: Download all the dists
@@ -46,12 +46,12 @@ jobs:
         with:
           name: python-package-distributions
           path: dist/
-      - name: Publish distribution to PyPI
+      - name: Publish distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
 
   github-release:
     name: >-
-      Sign the Python distribution with Sigstore
+      Sign the Python 🐍 distribution 📦 with Sigstore
       and upload them to GitHub Release
     needs:
       - publish-to-pypi
@@ -73,6 +73,13 @@ jobs:
           inputs: >-
             ./dist/*.tar.gz
             ./dist/*.whl
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create
+          '${{ github.ref_name }}'
+          --notes ""
       - name: Upload artifact signatures to GitHub Release
         env:
           GITHUB_TOKEN: ${{ github.token }}
