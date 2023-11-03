@@ -117,7 +117,6 @@ class Kite:
             self.session.headers.update({
                 'Authorization': f'enctoken {self.enctoken}'
             })
-            # self.session.cookies.set('enctoken', self.enctoken)
         else:
             # initiate login
             self._check_auth()
@@ -125,13 +124,10 @@ class Kite:
     def __enter__(self):
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_trace):
+    def __exit__(self, *_):
         self.session.close()
 
-        if exc_type is None:
-            return True
-
-        exit(f'{exc_type}: {exc_value} | {exc_trace}')
+        return False
 
     def close(self):
         '''Close the Requests session'''
@@ -171,13 +167,13 @@ class Kite:
 
         if code == 429:
             if th.penalise():
-                raise RuntimeError('Too many API rate limit warnings.')
+                raise RuntimeError(f'{code}: {r.reason}')
 
         if code == 403:
             if self.cookie_path.exists():
                 self.cookie_path.unlink()
 
-            reason = 'Session expired or invalidate. Must relogin'
+            reason = 'Session expired or invalid. Must relogin'
             raise ConnectionError(f'{hint} | {code}: {reason}')
 
         if code == 400:
@@ -187,7 +183,7 @@ class Kite:
         if code >= 500:
             raise ConnectionError(f'{hint} | {code}: {r.reason}')
 
-        print(f'WARNING | {hint} | {code}: {r.reason}')
+        print(f'WARN | {hint} | {code}: {r.reason}')
         return None
 
     def _authorize(self, user_id, pwd):

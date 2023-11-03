@@ -46,11 +46,24 @@ To access the browser `enctoken`, login to kite.zerodha.com and press `SHIFT + F
 **Passing credentials file path**
 Credentials file is no longer supported. Storing plain text passwords in a file, could be unsafe.
 
+## NOTES
+
+- Starting `v1.1.0`, kitetrader no longer exits on error. You must handle the error appropriately.
+
+- Methods may raise the following errors:
+  - A `RuntimeError` is raised if too many (>15) 429 reponse codes are returned.
+  - A `TimeoutError` is raised if server takes too long to respond.
+  - A `ConnectionError` is raised if:
+    - Session expired
+    - Bad request or invalid parameters
+    - Internal server error
+- Any other HTTP error code will print a warning and return `None`.
+
+Be sure to take this into consideration when writing your scripts.
+
 ## Available Methods
 
 Almost all methods defined on the Kite Connect 3 api have been covered except Webhooks and Websocket streaming. You can refer to the [Kite Connect Docs](https://kite.trade/docs/connect/v3/) for more information
-
-**NOTE** The methods may return `None` in case of API or network errors. Be sure take this into consideration when writing your scripts.
 
 ```python
 # User
