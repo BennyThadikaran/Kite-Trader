@@ -6,6 +6,8 @@ If you :heart: my work so far, please :star2: this repo.
 
 ## Installation
 
+Supports Python version >= 3.8
+
 `pip install kitetrader`
 
 ## Usage

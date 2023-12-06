@@ -1,3 +1,4 @@
+from __future__ import annotations
 from requests import Session
 from requests.exceptions import ReadTimeout
 from pathlib import Path
@@ -20,7 +21,6 @@ throttle_config = {
         'rps': 8,
     }
 }
-
 
 th = Throttle(throttle_config, 15)
 
@@ -114,9 +114,8 @@ class Kite:
 
         if self.enctoken:
             # Finally set Authorization headers and cookies on session
-            self.session.headers.update({
-                'Authorization': f'enctoken {self.enctoken}'
-            })
+            self.session.headers.update(
+                {'Authorization': f'enctoken {self.enctoken}'})
         else:
             # initiate login
             self._check_auth()
@@ -191,13 +190,12 @@ class Kite:
 
         base_url = 'https://kite.zerodha.com'
 
-        payload = {
-            'user_id': user_id,
-            'password': pwd
-        }
+        payload = {'user_id': user_id, 'password': pwd}
 
-        r = self._req(f'{base_url}/api/login', 'POST',
-                      payload=payload, hint='Login')
+        r = self._req(f'{base_url}/api/login',
+                      'POST',
+                      payload=payload,
+                      hint='Login')
 
         if r is None:
             return
@@ -208,22 +206,24 @@ class Kite:
         twofa_type = res['data']['twofa_type']
         twofa_value = input(f'Please enter {twofa_type} code\n> ')
 
-        res = self._req(f'{base_url}/api/twofa', 'POST', payload={
-            'user_id': user_id,
-            'request_id': request_id,
-            'twofa_value': twofa_value,
-            'twofa_type': twofa_type,
-            'skip_session': ''
-        }, hint='TwoFA')
+        res = self._req(f'{base_url}/api/twofa',
+                        'POST',
+                        payload={
+                            'user_id': user_id,
+                            'request_id': request_id,
+                            'twofa_value': twofa_value,
+                            'twofa_type': twofa_type,
+                            'skip_session': ''
+                        },
+                        hint='TwoFA')
 
         if res:
             enctoken = res.cookies['enctoken']
 
             self._set_cookie(res.cookies)
 
-            self.session.headers.update({
-                'authorization': f'enctoken {enctoken}'
-            })
+            self.session.headers.update(
+                {'authorization': f'enctoken {enctoken}'})
 
             print('Authorization Succces')
 
@@ -259,9 +259,7 @@ class Kite:
 
         res = self._req(f"{self.base_url}/quote",
                         'GET',
-                        payload={
-                            'i': instruments
-                        },
+                        payload={'i': instruments},
                         hint='Quote')
 
         return res.json()['data'] if res else None
@@ -276,9 +274,7 @@ class Kite:
 
         res = self._req(f"{self.base_url}/quote/ohlc",
                         method='GET',
-                        payload={
-                            'i': instruments
-                        },
+                        payload={'i': instruments},
                         hint='Quote/OHLC')
 
         return res.json()['data'] if res else None
@@ -293,9 +289,8 @@ class Kite:
 
         res = self._req(f"{self.base_url}/quote/ltp",
                         method='GET',
-                        payload={
-                            "i": instruments
-                        }, hint='LTP')
+                        payload={"i": instruments},
+                        hint='LTP')
 
         return res.json()['data'] if res else None
 
@@ -376,10 +371,7 @@ class Kite:
 
         th.check('historical')
 
-        res = self._req(url,
-                        method='GET',
-                        payload=payload,
-                        hint='Historical')
+        res = self._req(url, method='GET', payload=payload, hint='Historical')
 
         return res.json()['data']['candles'] if res else None
 
