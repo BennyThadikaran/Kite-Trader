@@ -1,6 +1,9 @@
-from __future__ import annotations
+from collections.abc import Collection
+from typing import Union
 from requests import Session
 from requests.exceptions import ReadTimeout
+from urllib3.util import Retry
+from requests.adapters import HTTPAdapter
 from pathlib import Path
 from pickle import loads as pickle_loads, dumps as pickle_dumps
 from mthrottle import Throttle
@@ -82,24 +85,35 @@ class Kite:
     cookies = None
     config = None
 
-    def __init__(self, enctoken=None):
+    def __init__(self, enctoken: Union[str, None] = None):
 
         self.cookie_path = self.base_dir / "kite_cookies"
         self.enctoken = enctoken
         self.session = Session()
 
+        retries = Retry(
+            total=None,
+            connect=3,
+            read=3,
+            redirect=0,
+            status=3,
+            other=0,
+            backoff_factor=0.1,
+            status_forcelist=["502", "503", "504"],
+            raise_on_status=False,
+        )
+
+        self.session.mount("https://", HTTPAdapter(max_retries=retries))
+
         ua = (
             "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0"
         )
 
-        headers = {
-            "User-Agent": ua,
-            "Accept": "*/*",
-            "Accept-Language": "en-US,en;q=0.5",
-            "Accept-Encoding": "gzip, deflate",
-        }
-
-        self.session.headers.update(headers)
+        self.session.headers.update(
+            {
+                "User-Agent": ua,
+            }
+        )
 
         if self.cookie_path.exists():
             self.cookies = self._get_cookie()
@@ -182,13 +196,9 @@ class Kite:
             reason = "Missing or bad request parameters or values"
             raise ConnectionError(f"{hint} | {code}: {reason}")
 
-        if code >= 500:
-            raise ConnectionError(f"{hint} | {code}: {r.reason}")
+        raise ConnectionError(f"{hint} | {code}: {r.reason}")
 
-        print(f"WARN | {hint} | {code}: {r.reason}")
-        return None
-
-    def _authorize(self, user_id, pwd):
+    def _authorize(self, user_id: str, pwd: str):
         """Authenthicate the user"""
 
         base_url = "https://kite.zerodha.com"
@@ -240,7 +250,7 @@ class Kite:
 
         self._authorize(user_id, pwd)
 
-    def instruments(self, exchange=None):
+    def instruments(self, exchange: Union[str, None] = None):
         """return a CSV dump of all tradable instruments"""
 
         th.check()
@@ -254,10 +264,10 @@ class Kite:
         if res:
             return res.content
 
-    def quote(self, instruments: str | list | tuple | set):
+    def quote(self, instruments: Union[str, Collection]):
         """Return the full market quotes - ohlc, OI, bid/ask etc"""
 
-        if type(instruments) in (list, tuple, set) and len(instruments) > 500:
+        if not isinstance(instruments, str) and len(instruments) > 500:
             raise ValueError("Instruments length cannot exceed 500")
 
         th.check("quote")
@@ -271,10 +281,10 @@ class Kite:
 
         return res.json()["data"] if res else None
 
-    def ohlc(self, instruments: str | list | tuple | set):
+    def ohlc(self, instruments: Union[str, Collection]):
         """Returns ohlc and last traded price"""
 
-        if type(instruments) in (list, tuple, set) and len(instruments) > 1000:
+        if not isinstance(instruments, str) and len(instruments) > 1000:
             raise ValueError("Instruments length cannot exceed 1000")
 
         th.check("quote")
@@ -288,10 +298,10 @@ class Kite:
 
         return res.json()["data"] if res else None
 
-    def ltp(self, instruments: str | list | tuple | set):
+    def ltp(self, instruments: Union[str, Collection]):
         """Returns the last traded price"""
 
-        if type(instruments) in (list, tuple, set) and len(instruments) > 1000:
+        if not isinstance(instruments, str) and len(instruments) > 1000:
             raise ValueError("Instruments length cannot exceed 1000")
 
         th.check("quote")
@@ -344,7 +354,7 @@ class Kite:
 
         return res.json()["data"] if res else None
 
-    def margins(self, segment=None):
+    def margins(self, segment: Union[str, None] = None):
         """Returns funds, cash, and margin information for the user
         for equity and commodity segments"""
 
@@ -371,8 +381,8 @@ class Kite:
     def historical_data(
         self,
         instrument_token: str,
-        from_dt: datetime,
-        to_dt: datetime,
+        from_dt: Union[datetime, str],
+        to_dt: Union[datetime, str],
         interval: str,
         continuous=False,
         oi=False,
@@ -380,6 +390,12 @@ class Kite:
         """return historical candle records for a given instrument."""
 
         url = f"{self.base_url}/instruments/historical/{instrument_token}/{interval}"
+
+        if isinstance(from_dt, str):
+            from_dt = datetime.fromisoformat(from_dt)
+
+        if isinstance(to_dt, str):
+            to_dt = datetime.fromisoformat(to_dt)
 
         payload = {
             "from": from_dt,
