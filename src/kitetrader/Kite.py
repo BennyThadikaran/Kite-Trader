@@ -90,7 +90,7 @@ class Kite:
         user_id: Optional[str] = None,
         password: Optional[str] = None,
         twofa: Optional[str] = None,
-        enctoken: Union[str, None] = None,
+        enctoken: Optional[str] = None,
     ):
 
         self.cookie_path = self.base_dir / "kite_cookies"
@@ -243,7 +243,7 @@ class Kite:
 
             print("Authorization Succces")
 
-    def instruments(self, exchange: Union[str, None] = None):
+    def instruments(self, exchange: Optional[str] = None):
         """return a CSV dump of all tradable instruments"""
 
         th.check()
@@ -347,7 +347,7 @@ class Kite:
 
         return res.json()["data"] if res else None
 
-    def margins(self, segment: Union[str, None] = None):
+    def margins(self, segment: Optional[str] = None):
         """Returns funds, cash, and margin information for the user
         for equity and commodity segments"""
 
