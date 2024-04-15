@@ -99,7 +99,7 @@ class Kite:
             status=3,
             other=0,
             backoff_factor=0.1,
-            status_forcelist=["502", "503", "504"],
+            status_forcelist=[502, 503, 504],
             raise_on_status=False,
         )
 
