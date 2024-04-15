@@ -5,7 +5,7 @@ from requests.exceptions import ReadTimeout
 from urllib3.util import Retry
 from requests.adapters import HTTPAdapter
 from pathlib import Path
-from pickle import loads as pickle_loads, dumps as pickle_dumps
+import pickle
 from mthrottle import Throttle
 from datetime import datetime
 
@@ -141,12 +141,12 @@ class Kite:
     def _get_cookie(self):
         """Load the pickle format cookie file"""
 
-        return pickle_loads(self.cookie_path.read_bytes())
+        return pickle.loads(self.cookie_path.read_bytes())
 
     def _set_cookie(self, cookies):
         """Save the cookies to pickle formatted file"""
 
-        self.cookie_path.write_bytes(pickle_dumps(cookies))
+        self.cookie_path.write_bytes(pickle.dumps(cookies))
 
     def _req(self, url, method, payload=None, timeout=15, hint=None):
         """Make an HTTP request"""
