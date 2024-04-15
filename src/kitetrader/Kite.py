@@ -405,20 +405,17 @@ class Kite:
     ):
         """Place an order of a particular variety"""
 
-        url = f"{self.base_url}/orders/{variety}"
+        params = {k: v for k, v in locals().items() if v is not None}
 
-        params = locals()
-
-        del params["self"]
-
-        for k in params.keys():
-            if params[k] is None:
-                del params[k]
+        params.pop("self")
 
         th.check("order")
 
         return self._req(
-            url, "POST", payload=params, hint="Place Order"
+            f"{self.base_url}/orders/{variety}",
+            "POST",
+            payload=params,
+            hint="Place Order",
         ).json()["data"]["order_id"]
 
     def modify_order(
@@ -434,20 +431,17 @@ class Kite:
     ):
         """Modify an open order."""
 
-        url = f"{self.base_url}/orders/{variety}/{order_id}"
+        params = {k: v for k, v in locals().items() if v is not None}
 
-        params = locals()
-
-        del params["self"]
-
-        for k in list(params.keys()):
-            if params[k] is None:
-                del params[k]
+        params.pop("self")
 
         th.check("order")
 
         return self._req(
-            url, "PUT", payload=params, hint="Modify order"
+            f"{self.base_url}/orders/{variety}/{order_id}",
+            "PUT",
+            payload=params,
+            hint="Modify order",
         ).json()["data"]["order_id"]
 
     def cancel_order(self, variety, order_id):
