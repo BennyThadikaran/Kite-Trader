@@ -1,5 +1,5 @@
 from collections.abc import Collection
-from typing import Union
+from typing import Optional, Union
 from requests import Session
 from requests.exceptions import ReadTimeout
 from urllib3.util import Retry
@@ -85,11 +85,17 @@ class Kite:
     cookies = None
     config = None
 
-    def __init__(self, enctoken: Union[str, None] = None):
+    def __init__(
+        self,
+        user_id: Optional[str] = None,
+        password: Optional[str] = None,
+        twofa: Optional[str] = None,
+        enctoken: Union[str, None] = None,
+    ):
 
         self.cookie_path = self.base_dir / "kite_cookies"
-        self.enctoken = enctoken
         self.session = Session()
+        self.enctoken = enctoken
 
         retries = Retry(
             total=None,
@@ -109,23 +115,15 @@ class Kite:
             self.cookies = self._get_cookie()
 
             # get enctoken from cookies
-            cookie_token = self.cookies.get("enctoken")
-
-            # only save cookies to file if enctoken has changed
-            if enctoken and cookie_token != enctoken:
-                self._set_cookie(self.session.cookies)
-            else:
-                # else set cookie enctoken
-                self.enctoken = cookie_token
+            self.enctoken = self.cookies.get("enctoken")
 
         if self.enctoken:
-            # Finally set Authorization headers and cookies on session
             self.session.headers.update(
                 {"Authorization": f"enctoken {self.enctoken}"}
             )
         else:
             # initiate login
-            self._check_auth()
+            self._authorize(user_id, password, twofa)
 
     def __enter__(self):
         return self
@@ -188,15 +186,27 @@ class Kite:
 
         raise ConnectionError(f"{hint} | {code}: {r.reason}")
 
-    def _authorize(self, user_id: str, pwd: str):
+    def _authorize(
+        self,
+        user_id: Optional[str] = None,
+        password: Optional[str] = None,
+        twofa: Optional[str] = None,
+    ):
         """Authenthicate the user"""
+
+        if not user_id:
+            user_id = input("Enter User id\n> ")
+
+        if not password:
+            password = input("Enter Password\n> ")
 
         base_url = "https://kite.zerodha.com"
 
-        payload = {"user_id": user_id, "password": pwd}
-
         r = self._req(
-            f"{base_url}/api/login", "POST", payload=payload, hint="Login"
+            f"{base_url}/api/login",
+            "POST",
+            payload=dict(user_id=user_id, password=password),
+            hint="Login",
         )
 
         if r is None:
@@ -206,39 +216,32 @@ class Kite:
 
         request_id = res["data"]["request_id"]
         twofa_type = res["data"]["twofa_type"]
-        twofa_value = input(f"Please enter {twofa_type} code\n> ")
+
+        if not twofa:
+            twofa = input(f"Please enter {twofa_type} code\n> ")
 
         res = self._req(
             f"{base_url}/api/twofa",
             "POST",
-            payload={
-                "user_id": user_id,
-                "request_id": request_id,
-                "twofa_value": twofa_value,
-                "twofa_type": twofa_type,
-                "skip_session": "",
-            },
+            payload=dict(
+                user_id=user_id,
+                request_id=request_id,
+                twofa_value=twofa,
+                twofa_type=twofa_type,
+                skip_session="",
+            ),
             hint="TwoFA",
         )
 
         if res:
             enctoken = res.cookies["enctoken"]
-
             self._set_cookie(res.cookies)
 
             self.session.headers.update(
-                {"authorization": f"enctoken {enctoken}"}
+                {"Authorization": f"enctoken {enctoken}"}
             )
 
             print("Authorization Succces")
-
-    def _check_auth(self):
-        print("Authorization required")
-
-        user_id = input("Enter User id\n> ")
-        pwd = input("Enter Password\n> ")
-
-        self._authorize(user_id, pwd)
 
     def instruments(self, exchange: Union[str, None] = None):
         """return a CSV dump of all tradable instruments"""
