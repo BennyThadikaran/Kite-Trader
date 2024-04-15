@@ -105,16 +105,6 @@ class Kite:
 
         self.session.mount("https://", HTTPAdapter(max_retries=retries))
 
-        ua = (
-            "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0"
-        )
-
-        self.session.headers.update(
-            {
-                "User-Agent": ua,
-            }
-        )
-
         if self.cookie_path.exists():
             self.cookies = self._get_cookie()
 
