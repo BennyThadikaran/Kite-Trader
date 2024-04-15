@@ -94,7 +94,10 @@ class Kite:
     ):
 
         self.cookie_path = self.base_dir / "kite_cookies"
+
         self.session = Session()
+        self.session.headers.update({"X-Kite-version": "3"})
+
         self.enctoken = enctoken
 
         retries = Retry(
@@ -130,7 +133,6 @@ class Kite:
 
     def __exit__(self, *_):
         self.session.close()
-
         return False
 
     def close(self):
