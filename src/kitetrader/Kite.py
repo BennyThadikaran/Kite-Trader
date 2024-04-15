@@ -1,5 +1,5 @@
 from collections.abc import Collection
-from typing import Optional, Union
+from typing import Optional, Union, Any
 from requests import Session
 from requests.exceptions import ReadTimeout
 from urllib3.util import Retry
@@ -150,7 +150,7 @@ class Kite:
 
         self.cookie_path.write_bytes(pickle.dumps(cookies))
 
-    def _req(self, url, method, payload=None, timeout=15, hint=None):
+    def _req(self, url, method, payload=None, timeout=15, hint=None) -> Any:
         """Make an HTTP request"""
 
         try:
@@ -204,25 +204,20 @@ class Kite:
 
         base_url = "https://kite.zerodha.com"
 
-        r = self._req(
+        response = self._req(
             f"{base_url}/api/login",
             "POST",
             payload=dict(user_id=user_id, password=password),
             hint="Login",
-        )
+        ).json()
 
-        if r is None:
-            return
-
-        res = r.json()
-
-        request_id = res["data"]["request_id"]
-        twofa_type = res["data"]["twofa_type"]
+        request_id = response["data"]["request_id"]
+        twofa_type = response["data"]["twofa_type"]
 
         if not twofa:
             twofa = input(f"Please enter {twofa_type} code\n> ")
 
-        res = self._req(
+        response = self._req(
             f"{base_url}/api/twofa",
             "POST",
             payload=dict(
@@ -235,15 +230,12 @@ class Kite:
             hint="TwoFA",
         )
 
-        if res:
-            enctoken = res.cookies["enctoken"]
-            self._set_cookie(res.cookies)
+        enctoken = response.cookies["enctoken"]
+        self._set_cookie(response.cookies)
 
-            self.session.headers.update(
-                {"Authorization": f"enctoken {enctoken}"}
-            )
+        self.session.headers.update({"Authorization": f"enctoken {enctoken}"})
 
-            print("Authorization Succces")
+        print("Authorization Succces")
 
     def instruments(self, exchange: Optional[str] = None):
         """return a CSV dump of all tradable instruments"""
@@ -254,10 +246,7 @@ class Kite:
         if exchange:
             url += f"/{exchange}"
 
-        res = self._req(url, "GET", hint="Instruments")
-
-        if res:
-            return res.content
+        return self._req(url, "GET", hint="Instruments")
 
     def quote(self, instruments: Union[str, Collection]):
         """Return the full market quotes - ohlc, OI, bid/ask etc"""
@@ -274,7 +263,7 @@ class Kite:
             hint="Quote",
         )
 
-        return res.json()["data"] if res else None
+        return res.json()["data"]
 
     def ohlc(self, instruments: Union[str, Collection]):
         """Returns ohlc and last traded price"""
@@ -291,7 +280,7 @@ class Kite:
             hint="Quote/OHLC",
         )
 
-        return res.json()["data"] if res else None
+        return res.json()["data"]
 
     def ltp(self, instruments: Union[str, Collection]):
         """Returns the last traded price"""
@@ -301,53 +290,45 @@ class Kite:
 
         th.check("quote")
 
-        res = self._req(
+        return self._req(
             f"{self.base_url}/quote/ltp",
             method="GET",
             payload={"i": instruments},
             hint="LTP",
-        )
-
-        return res.json()["data"] if res else None
+        ).json()["data"]
 
     def holdings(self):
         """Return the list of long term equity holdings"""
 
         th.check()
 
-        res = self._req(
+        return self._req(
             f"{self.base_url}/portfolio/holdings",
             method="GET",
             hint="Portfolio/holdings",
-        )
-
-        return res.json()["data"] if res else None
+        ).json()["data"]
 
     def positions(self):
         """Retrieve the list of short term positions"""
 
         th.check()
 
-        res = self._req(
+        return self._req(
             f"{self.base_url}/portfolio/positions",
             method="GET",
             hint="Portfolio/positions",
-        )
-
-        return res.json()["data"] if res else None
+        ).json()["data"]
 
     def auctions(self):
         """Retrieve the list of auctions that are currently being held"""
 
         th.check()
 
-        res = self._req(
+        return self._req(
             f"{self.base_url}/portfolio/auctions",
             method="GET",
             hint="Portfolio/auctions",
-        )
-
-        return res.json()["data"] if res else None
+        ).json()["data"]
 
     def margins(self, segment: Optional[str] = None):
         """Returns funds, cash, and margin information for the user
@@ -360,18 +341,16 @@ class Kite:
 
         th.check()
 
-        res = self._req(url, method="GET", hint="Margins")
-
-        return res.json()["data"] if res else None
+        return self._req(url, method="GET", hint="Margins").json()["data"]
 
     def profile(self):
         """Retrieve the user profile"""
 
         th.check()
 
-        res = self._req(f"{self.base_url}/user/profile", "GET", hint="Profile")
-
-        return res.json()["data"] if res else None
+        return self._req(
+            f"{self.base_url}/user/profile", "GET", hint="Profile"
+        ).json()["data"]
 
     def historical_data(
         self,
@@ -401,9 +380,9 @@ class Kite:
 
         th.check("historical")
 
-        res = self._req(url, method="GET", payload=payload, hint="Historical")
-
-        return res.json()["data"]["candles"] if res else None
+        return self._req(
+            url, method="GET", payload=payload, hint="Historical"
+        ).json()["data"]["candles"]
 
     def place_order(
         self,
@@ -438,9 +417,9 @@ class Kite:
 
         th.check("order")
 
-        res = self._req(url, "POST", payload=params, hint="Place Order")
-
-        return res.json()["data"]["order_id"] if res else None
+        return self._req(
+            url, "POST", payload=params, hint="Place Order"
+        ).json()["data"]["order_id"]
 
     def modify_order(
         self,
@@ -467,9 +446,9 @@ class Kite:
 
         th.check("order")
 
-        res = self._req(url, "PUT", payload=params, hint="Modify order")
-
-        return res.json()["data"]["order_id"] if res else None
+        return self._req(
+            url, "PUT", payload=params, hint="Modify order"
+        ).json()["data"]["order_id"]
 
     def cancel_order(self, variety, order_id):
         """Cancel an order."""
@@ -478,18 +457,16 @@ class Kite:
 
         th.check("order")
 
-        res = self._req(url, "DELETE", hint="Cancel order")
-
-        return res.json()["data"]["order_id"] if res else None
+        return self._req(url, "DELETE", hint="Cancel order").json()["data"]
 
     def orders(self):
         """Get list of all orders for the day"""
 
         th.check("order")
 
-        res = self._req(f"{self.base_url}/orders", "GET", hint="Orders")
-
-        return res.json()["data"] if res else None
+        return self._req(
+            f"{self.base_url}/orders", "GET", hint="Orders"
+        ).json()["data"]
 
     def order_history(self, order_id):
         """Get history of individual orders"""
@@ -498,9 +475,7 @@ class Kite:
 
         th.check("order")
 
-        res = self._req(url, "GET", hint="Order history")
-
-        return res.json()["data"] if res else None
+        return self._req(url, "GET", hint="Order history").json()["data"]
 
     def trades(self):
         """Get the list of all executed trades for the day"""
@@ -509,9 +484,7 @@ class Kite:
 
         th.check()
 
-        res = self._req(url, "GET", hint="Trades")
-
-        return res.json()["data"] if res else None
+        return self._req(url, "GET", hint="Trades").json()["data"]
 
     def order_trades(self, order_id):
         """Get the the trades generated by an order"""
@@ -520,6 +493,4 @@ class Kite:
 
         th.check("orders")
 
-        res = self._req(url, "GET", hint="Order Trades")
-
-        return res.json()["data"] if res else None
+        return self._req(url, "GET", hint="Order Trades").json()["data"]
