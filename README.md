@@ -31,6 +31,10 @@ kite.close()
 
 ## Login
 
+**Update v2.1.0**
+
+- You can pass the user_id, password and OTP during class initialization. This allows full automation of script for those requiring it. See #notes below for details.
+
 On first initialization, Kite will check for user authentication. If no arguments are provided, the script prompts for username, password, and OTP.
 
 On successful login, an `enctoken` is generated and stored in a cookie file.
@@ -45,10 +49,9 @@ You can reuse the browser `enctoken`, passing it to Kite. This way, you can use 
 
 To access the browser `enctoken`, login to kite.zerodha.com and press `SHIFT + F9` to open the Storage inspector (On Firefox). You will find the info under cookies.
 
-**Passing credentials file path**
-Credentials file is no longer supported. Storing plain text passwords in a file, could be unsafe.
-
 ## NOTES
+
+- Hard coding password and credentials can be risky. Take appropriate measure to safeguard your credentials from accidental uploads or exposure on shared computers. Stick to defaults or use enctoken if unsure.
 
 - Starting `v1.1.0`, kitetrader no longer exits on error. You must handle the error appropriately.
 
@@ -280,7 +283,7 @@ class Kite(builtins.object)
  |  
  |  Methods defined here:
  |  
- |  __init__(self, enctoken: Optional[str] = None)
+ |  __init__(self, user_id: Optional[str] = None, password: Optional[str] = None, twofa: Optional[str] = None, enctoken: Optional[str] = None)
  |      Initialize self.  See help(type(self)) for accurate signature.
  |  
  |  auctions(self)
