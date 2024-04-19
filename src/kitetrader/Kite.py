@@ -316,7 +316,7 @@ class Kite:
 
         self._set_enc_token(self.enctoken)
 
-        self.log.info("Web Login Succces")
+        self.log.info("Web Login Success")
 
     def instruments(self, exchange: Optional[str] = None):
         """return a CSV dump of all tradable instruments"""
