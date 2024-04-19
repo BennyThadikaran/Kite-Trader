@@ -5,9 +5,10 @@ from requests.exceptions import ReadTimeout
 from urllib3.util import Retry
 from requests.adapters import HTTPAdapter
 from pathlib import Path
-import pickle
 from mthrottle import Throttle
 from datetime import datetime
+import pickle, hashlib
+
 
 throttle_config = {
     "quote": {
@@ -91,6 +92,10 @@ class Kite:
         password: Optional[str] = None,
         twofa: Optional[str] = None,
         enctoken: Optional[str] = None,
+        access_token: Optional[str] = None,
+        api_key: Optional[str] = None,
+        api_secret: Optional[str] = None,
+        request_token: Optional[str] = None,
     ):
 
         self.cookie_path = self.base_dir / "kite_cookies"
@@ -99,6 +104,7 @@ class Kite:
         self.session.headers.update({"X-Kite-version": "3"})
 
         self.enctoken = enctoken
+        self.access_token = access_token
 
         retries = Retry(
             total=None,
@@ -114,19 +120,30 @@ class Kite:
 
         self.session.mount("https://", HTTPAdapter(max_retries=retries))
 
+        if self.enctoken:
+            return self._set_enc_token(self.enctoken)
+
+        if self.access_token:
+            if not api_key:
+                raise ValueError(
+                    "api_key is required, when access_token is passed"
+                )
+
+            return self._set_access_token(api_key, self.access_token)
+
         if self.cookie_path.exists():
             self.cookies = self._get_cookie()
 
             # get enctoken from cookies
             self.enctoken = self.cookies.get("enctoken")
 
-        if self.enctoken:
-            self.session.headers.update(
-                {"Authorization": f"enctoken {self.enctoken}"}
-            )
-        else:
-            # initiate login
-            self._authorize(user_id, password, twofa)
+            if self.enctoken:
+                return self._set_enc_token(self.enctoken)
+
+        # initiate login
+        self._authorize(
+            user_id, password, twofa, api_key, request_token, api_secret
+        )
 
     def __enter__(self):
         return self
@@ -134,6 +151,14 @@ class Kite:
     def __exit__(self, *_):
         self.session.close()
         return False
+
+    def _set_enc_token(self, token):
+        self.session.headers.update({"Authorization": f"enctoken {token}"})
+
+    def _set_access_token(self, api_key, token):
+        self.session.headers.update(
+            {"Authorization": f"token {api_key}:{token}"}
+        )
 
     def close(self):
         """Close the Requests session"""
@@ -193,22 +218,49 @@ class Kite:
         user_id: Optional[str] = None,
         password: Optional[str] = None,
         twofa: Optional[str] = None,
+        api_key: Optional[str] = None,
+        request_token: Optional[str] = None,
+        secret: Optional[str] = None,
     ):
         """Authenthicate the user"""
 
+        login_url = "https://kite.zerodha.com"
+
+        if request_token and secret:
+            # API LOGIN
+            if not api_key:
+                raise ValueError("No api_key provided during initialization")
+
+            checksum = hashlib.sha256(
+                f"{api_key}{request_token}{secret}".encode("utf-8")
+            ).hexdigest()
+
+            response = self._req(
+                f"{login_url}/session/token",
+                "POST",
+                payload={
+                    "api_key": api_key,
+                    "request_token": request_token,
+                    "checksum": checksum,
+                },
+                hint="API_LOGIN",
+            ).json()
+
+            self.access_token = response["access_token"]
+            return self._set_access_token(api_key, self.access_token)
+
+        # WEB LOGIN
         if not user_id:
             user_id = input("Enter User id\n> ")
 
         if not password:
             password = input("Enter Password\n> ")
 
-        base_url = "https://kite.zerodha.com"
-
         response = self._req(
-            f"{base_url}/api/login",
+            f"{login_url}/api/login",
             "POST",
             payload=dict(user_id=user_id, password=password),
-            hint="Login",
+            hint="WEB_LOGIN",
         ).json()
 
         request_id = response["data"]["request_id"]
@@ -218,7 +270,7 @@ class Kite:
             twofa = input(f"Please enter {twofa_type} code\n> ")
 
         response = self._req(
-            f"{base_url}/api/twofa",
+            f"{login_url}/api/twofa",
             "POST",
             payload=dict(
                 user_id=user_id,
@@ -230,10 +282,10 @@ class Kite:
             hint="TwoFA",
         )
 
-        enctoken = response.cookies["enctoken"]
+        self.enctoken = response.cookies["enctoken"]
         self._set_cookie(response.cookies)
 
-        self.session.headers.update({"Authorization": f"enctoken {enctoken}"})
+        self._set_enc_token(self.enctoken)
 
         print("Authorization Succces")
 
