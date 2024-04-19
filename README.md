@@ -35,7 +35,7 @@ kite.close()
 
 **For KiteConnect login:**
 
-1. Pass the api_key, api_secret and request_token during initialization. Once authorized the `access_token` can be accessed as `kite.access_token`
+1. Pass the `api_key`, `api_secret` and `request_token` during initialization. Once authorized, the `access_token` can be accessed as `kite.access_token`
 
 ```python
 kite = Kite(
@@ -60,7 +60,7 @@ kite = Kite(
 
 **For Web Login:**
 
-1. Web login is the default, if no arguments are passed. It will start an interactive prompt requesting `user_id`, `password` and `twofa`.
+1. Web login is the default, if no arguments are passed. It will start an interactive prompt, requesting `user_id`, `password` and `twofa`.
 
 ```python
 # Interactive prompt
@@ -70,7 +70,7 @@ kite = Kite()
 print(kite.enctoken)
 ```
 
-2. You may pass some or all three arguments. Any missing info, will need to be entered when prompted.
+2. You may pass some or all three arguments. Any missing info, will need to be entered, when prompted.
 
 ```python
 kite = Kite(
@@ -276,6 +276,20 @@ MARGIN_COMMODITY = "commodity"
 # GTT order type
 GTT_TYPE_OCO = "two-leg"
 GTT_TYPE_SINGLE = "single"
+
+# Status constants
+STATUS_COMPLETE = "COMPLETE"
+STATUS_REJECTED = "REJECTED"
+STATUS_CANCELLED = "CANCELLED"
+
+# GTT order status
+GTT_STATUS_ACTIVE = "active"
+GTT_STATUS_TRIGGERED = "triggered"
+GTT_STATUS_DISABLED = "disabled"
+GTT_STATUS_EXPIRED = "expired"
+GTT_STATUS_CANCELLED = "cancelled"
+GTT_STATUS_REJECTED = "rejected"
+GTT_STATUS_DELETED = "deleted"
 ```
 
 ### API limits and Throttling
