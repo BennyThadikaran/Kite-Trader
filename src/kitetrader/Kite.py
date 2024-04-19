@@ -81,6 +81,20 @@ class Kite:
     GTT_TYPE_OCO = "two-leg"
     GTT_TYPE_SINGLE = "single"
 
+    # Status constants
+    STATUS_COMPLETE = "COMPLETE"
+    STATUS_REJECTED = "REJECTED"
+    STATUS_CANCELLED = "CANCELLED"
+
+    # GTT order status
+    GTT_STATUS_ACTIVE = "active"
+    GTT_STATUS_TRIGGERED = "triggered"
+    GTT_STATUS_DISABLED = "disabled"
+    GTT_STATUS_EXPIRED = "expired"
+    GTT_STATUS_CANCELLED = "cancelled"
+    GTT_STATUS_REJECTED = "rejected"
+    GTT_STATUS_DELETED = "deleted"
+
     base_dir = Path(__file__).parent
     base_url = "https://api.kite.trade"
     cookies = None
