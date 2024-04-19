@@ -31,29 +31,66 @@ kite.close()
 
 ## Login
 
-**Update v2.1.0**
+**Update v2.2.0 - 19th April 2024** - Support both KiteConnect login and Web login
 
-- You can pass the user_id, password and OTP during class initialization. This allows full automation of script for those requiring it. See #notes below for details.
+**For KiteConnect login:**
 
-On first initialization, Kite will check for user authentication. If no arguments are provided, the script prompts for username, password, and OTP.
+1. Pass the api_key, api_secret and request_token during initialization. Once authorized the `access_token` can be accessed as `kite.access_token`
 
-On successful login, an `enctoken` is generated and stored in a cookie file.
+```python
+kite = Kite(
+    api_key=credentials['api_key'],
+    api_secret=credentials['api_secret'],
+    request_token=credentials['request_token'],
+)
 
-If the cookie file exists on subsequent initialization, the `enctoken` is reused, eliminating the need to log in again.
+# On successful authentication, save the kite.access_token to database or file
+# for future use
+print(kite.access_token)
+```
 
-This method will logout all Kite web (browser) sessions. (You can continue to use the Kite Mobile App).
+2. On subsequent attempts, simply pass the `access_token` and `api_key`
 
-You can reuse the browser `enctoken`, passing it to Kite. This way, you can use Kite without getting logged out.
+```python
+kite = Kite(
+    access_token=credentials["access_token"],
+    api_key=credentials["api_key"],
+)
+```
 
-`kite = Kite(enctoken='<token string>')`
+**For Web Login:**
+
+1. Web login is the default, if no arguments are passed. It will start an interactive prompt requesting `user_id`, `password` and `twofa`.
+
+```python
+# Interactive prompt
+kite = Kite()
+
+# Once auth is completed, save the enctoken for later use
+print(kite.enctoken)
+```
+
+2. You may pass some or all three arguments. Any missing info, will need to be entered when prompted.
+
+```python
+kite = Kite(
+    user_id: credentials['user_id'],
+    password: credentials['password'],
+    twofa: twofa,
+)
+```
+
+3. On successful authorization, the enctoken is saved to a cookie file. On subsequent attempts, the `enctoken` is loaded from the cookie file.
+
+4. Using the web login, will log you out of any Kite web browser sessions. You can reuse the browser `enctoken`, passing it to Kite. This way, you can use Kite Web, without getting logged out.
+
+`kite = Kite(enctoken=credentials['enctoken'])`
 
 To access the browser `enctoken`, login to kite.zerodha.com and press `SHIFT + F9` to open the Storage inspector (On Firefox). You will find the info under cookies.
 
 ## NOTES
 
 - Hard coding password and credentials can be risky. Take appropriate measure to safeguard your credentials from accidental uploads or exposure on shared computers. Stick to defaults or use enctoken if unsure.
-
-- Starting `v1.1.0`, kitetrader no longer exits on error. You must handle the error appropriately.
 
 - Methods may raise the following errors:
   - A `RuntimeError` is raised if too many (>15) 429 reponse codes are returned.
