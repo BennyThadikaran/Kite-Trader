@@ -7,7 +7,7 @@ from requests.adapters import HTTPAdapter
 from pathlib import Path
 from mthrottle import Throttle
 from datetime import datetime
-import pickle, hashlib
+import pickle, hashlib, logging
 
 
 throttle_config = {
@@ -27,6 +27,15 @@ throttle_config = {
 }
 
 th = Throttle(throttle_config, 15)
+
+
+def configure_default_logger(name):
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s: %(message)s",
+    )
+
+    return logging.getLogger(name)
 
 
 class Kite:
@@ -110,6 +119,7 @@ class Kite:
         api_key: Optional[str] = None,
         api_secret: Optional[str] = None,
         request_token: Optional[str] = None,
+        logger: Optional[logging.Logger] = None,
     ):
 
         self.cookie_path = self.base_dir / "kite_cookies"
@@ -133,6 +143,8 @@ class Kite:
         )
 
         self.session.mount("https://", HTTPAdapter(max_retries=retries))
+
+        self.log = logger if logger else configure_default_logger(__name__)
 
         if self.enctoken:
             return self._set_enc_token(self.enctoken)
@@ -168,11 +180,13 @@ class Kite:
 
     def _set_enc_token(self, token):
         self.session.headers.update({"Authorization": f"enctoken {token}"})
+        self.log.info("Auth headers updated with enctoken")
 
     def _set_access_token(self, api_key, token):
         self.session.headers.update(
             {"Authorization": f"token {api_key}:{token}"}
         )
+        self.log.info("Auth headers updated with access_token")
 
     def close(self):
         """Close the Requests session"""
@@ -261,6 +275,7 @@ class Kite:
             ).json()
 
             self.access_token = response["access_token"]
+            self.log.info("KiteConnect login success")
             return self._set_access_token(api_key, self.access_token)
 
         # WEB LOGIN
@@ -301,7 +316,7 @@ class Kite:
 
         self._set_enc_token(self.enctoken)
 
-        print("Authorization Succces")
+        self.log.info("Web Login Succces")
 
     def instruments(self, exchange: Optional[str] = None):
         """return a CSV dump of all tradable instruments"""
