@@ -342,6 +342,25 @@ max_penalty_count = 15
 th = Throttle(throttle_config, max_penalty_count)
 ```
 
+### Logging
+
+Kite-Trader uses the logging module. If no logger is defined, it uses a default logger, set to `INFO`. You can define your own logger and pass it to Kite during initialization.
+
+A helper function is also provided, so you can change the log level easily
+
+```python
+from kitetrader import Kite, configure_default_logger
+import logging
+
+logger = configure_default_logger(__name__)
+
+# set level to WARNING and above, default is INFO
+logger.setLevel(logging.WARNING)
+
+with Kite(logger=logger) as kite:
+    data = kite.quote("NSE:TCS")
+```
+
 ### Class and Method signature
 
 ```python
