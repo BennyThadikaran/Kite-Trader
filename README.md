@@ -1,6 +1,6 @@
 # Kite-Trader
 
-Unofficial Python Client for Zerodha Kite with built-in request throttling so you never exceed Kite's API limits.
+Unofficial Python library for Zerodha Kite with built-in throttling, so you never exceed Kite's API limits.
 
 If you :heart: my work so far, please :star2: this repo.
 
@@ -9,6 +9,22 @@ If you :heart: my work so far, please :star2: this repo.
 Supports Python version >= 3.8
 
 `pip install kitetrader`
+
+## Breaking changes in v3.0.0: 22nd April 2024
+
+Methods return the entire JSON response unmodified. Previously only the `data` portion of the response was returned.
+
+This allows the library user to code defensively. For example the trying to access `data` on the below response would result in a KeyError.
+
+```
+{
+    "status": "error",
+    "message": "Error message",
+    "error_type": "GeneralException"
+}
+```
+
+User can instead check if `response['status'] == 'success'` before accessing the `data` key. Otherwise log the error.
 
 ## Usage
 
@@ -88,9 +104,11 @@ kite = Kite(
 
 To access the browser `enctoken`, login to kite.zerodha.com and press `SHIFT + F9` to open the Storage inspector (On Firefox). You will find the info under cookies.
 
-## NOTES
+## IMPORTANT NOTES and WARNINGs
 
 - Hard coding password and credentials can be risky. Take appropriate measure to safeguard your credentials from accidental uploads or exposure on shared computers. Stick to defaults or use enctoken if unsure.
+
+- Web login credentials are meant to be used on your PC (For personal use). Use of Web login credentials on a public facing server can put your account at high risk.
 
 - Methods may raise the following errors:
   - A `RuntimeError` is raised if too many (>15) 429 reponse codes are returned.
