@@ -160,11 +160,18 @@ class Kite:
         if self.cookie_path.exists():
             self.cookies = self._get_cookie()
 
-            # get enctoken from cookies
-            self.enctoken = self.cookies.get("enctoken")
+            # check if cookie has expired
+            if datetime.now() > datetime.fromtimestamp(
+                float(self.cookies["expiry"])
+            ):
+                self.cookie_path.unlink()
+            else:
 
-            if self.enctoken:
-                return self._set_enc_token(self.enctoken)
+                # get enctoken from cookies
+                self.enctoken = self.cookies.get("enctoken")
+
+                if self.enctoken:
+                    return self._set_enc_token(self.enctoken)
 
         # initiate login
         self._authorize(
@@ -200,6 +207,16 @@ class Kite:
 
     def _set_cookie(self, cookies):
         """Save the cookies to pickle formatted file"""
+
+        cookies["expiry"] = (
+            datetime.now()
+            .replace(
+                hour=23,
+                minute=59,
+                second=59,
+            )
+            .timestamp()
+        )
 
         self.cookie_path.write_bytes(pickle.dumps(cookies))
 
