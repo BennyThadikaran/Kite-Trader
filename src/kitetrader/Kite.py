@@ -1,4 +1,4 @@
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from typing import Optional, Union, Any
 from requests import Session
 from requests.exceptions import ReadTimeout
@@ -113,7 +113,7 @@ class Kite:
         self,
         user_id: Optional[str] = None,
         password: Optional[str] = None,
-        twofa: Optional[str] = None,
+        twofa: Union[str, Callable, None] = None,
         enctoken: Optional[str] = None,
         access_token: Optional[str] = None,
         api_key: Optional[str] = None,
@@ -262,7 +262,7 @@ class Kite:
         self,
         user_id: Optional[str] = None,
         password: Optional[str] = None,
-        twofa: Optional[str] = None,
+        twofa: Union[str, Callable, None] = None,
         api_key: Optional[str] = None,
         request_token: Optional[str] = None,
         secret: Optional[str] = None,
@@ -296,11 +296,15 @@ class Kite:
             return self._set_access_token(api_key, self.access_token)
 
         # WEB LOGIN
-        if not user_id:
-            user_id = input("Enter User id\n> ")
+        try:
+            if user_id is None:
+                user_id = input("Enter User id\n> ")
 
-        if not password:
-            password = input("Enter Password\n> ")
+            if password is None:
+                password = input("Enter Password\n> ")
+        except KeyboardInterrupt:
+            self.close()
+            exit("\nUser exit")
 
         response = self._req(
             f"{login_url}/api/login",
@@ -312,8 +316,16 @@ class Kite:
         request_id = response["data"]["request_id"]
         twofa_type = response["data"]["twofa_type"]
 
-        if not twofa:
-            twofa = input(f"Please enter {twofa_type} code\n> ")
+        if callable(twofa):
+            otp = twofa()
+        elif isinstance(twofa, str):
+            otp = twofa
+        else:
+            try:
+                otp = input(f"Please enter {twofa_type} code\n> ")
+            except KeyboardInterrupt:
+                self.close()
+                exit("\nUser exit")
 
         response = self._req(
             f"{login_url}/api/twofa",
@@ -321,7 +333,7 @@ class Kite:
             payload=dict(
                 user_id=user_id,
                 request_id=request_id,
-                twofa_value=twofa,
+                twofa_value=otp,
                 twofa_type=twofa_type,
                 skip_session="",
             ),
