@@ -10,6 +10,11 @@ Supports Python version >= 3.8
 
 `pip install kitetrader`
 
+## Update:
+Due to changes in Zerodha Kite, the Web login is broken. This issue will not be fixed though there are workarounds. See #1 for details. 
+
+Those subscribed to Kite Connect can still use this library.
+
 ## Breaking changes in v3.0.0: 22nd April 2024
 
 Methods return the entire JSON response unmodified. Previously only the `data` portion of the response was returned.
