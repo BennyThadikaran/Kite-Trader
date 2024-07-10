@@ -104,6 +104,7 @@ class Kite:
     GTT_STATUS_REJECTED = "rejected"
     GTT_STATUS_DELETED = "deleted"
 
+    _type = "KITE_CONNECT"
     base_dir = Path(__file__).parent
     base_url = "https://api.kite.trade"
     cookies = None
@@ -188,6 +189,7 @@ class Kite:
     def _set_enc_token(self, token):
         self.session.headers.update({"Authorization": f"enctoken {token}"})
         self.log.info("Auth headers updated with enctoken")
+        self._type = "KITE_WEB"
 
     def _set_access_token(self, api_key, token):
         self.session.headers.update(
@@ -347,16 +349,19 @@ class Kite:
 
         self.log.info("Web Login Success")
 
-    def instruments(self, exchange: Optional[str] = None):
+    def instruments(self, exchange: Optional[str] = None) -> bytes:
         """return a CSV dump of all tradable instruments"""
 
         th.check()
         url = f"{self.base_url}/instruments"
 
+        if self._type == "KITE_WEB" and exchange:
+            raise ValueError("Exchange parameter cannot be used with Kite Web")
+
         if exchange:
             url += f"/{exchange}"
 
-        return self._req(url, "GET", hint="Instruments")
+        return self._req(url, "GET", hint="Instruments").content
 
     def quote(self, instruments: Union[str, Collection[str]]):
         """Return the full market quotes - ohlc, OI, bid/ask etc"""
@@ -469,7 +474,9 @@ class Kite:
     ):
         """return historical candle records for a given instrument."""
 
-        url = f"{self.base_url}/instruments/historical/{instrument_token}/{interval}"
+        kite_web_url = "https://kite.zerodha.com/oms"
+
+        endpoint = f"instruments/historical/{instrument_token}/{interval}"
 
         if isinstance(from_dt, str):
             from_dt = datetime.fromisoformat(from_dt)
@@ -484,10 +491,18 @@ class Kite:
             "oi": int(oi),
         }
 
+        if self._type == "KITE_WEB":
+            url = kite_web_url
+        else:
+            url = self.base_url
+
         th.check("historical")
 
         return self._req(
-            url, method="GET", payload=payload, hint="Historical"
+            f"{url}/{endpoint}",
+            method="GET",
+            payload=payload,
+            hint="Historical",
         ).json()
 
     def place_order(
