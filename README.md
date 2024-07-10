@@ -11,7 +11,9 @@ Supports Python version >= 3.8
 `pip install kitetrader`
 
 ## Update:
-Due to changes in Zerodha Kite, the Web login is broken. This issue will not be fixed though there are workarounds. See #1 for details. 
+Due to changes in Zerodha Kite, the Web login is broken. This issue will not be fixed though there are workarounds. See [Issue #1](https://github.com/BennyThadikaran/Kite-Trader/issues/1) for details.
+
+**v3.0.2** allows downloading Historical data and instruments list. Run `pip install -U kitetrader` to update. All other methods remain broken on Kite Web.
 
 Those subscribed to Kite Connect can still use this library.
 
