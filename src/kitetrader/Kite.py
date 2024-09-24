@@ -244,7 +244,7 @@ class Kite:
         code = r.status_code
 
         if code == 429:
-            if th.penalise():
+            if th.penalize():
                 raise RuntimeError(f"{code}: {r.reason}")
 
         if code == 403:
