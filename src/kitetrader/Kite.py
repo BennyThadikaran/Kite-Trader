@@ -1,14 +1,16 @@
+import hashlib
+import logging
+import pickle
 from collections.abc import Callable, Collection
-from typing import Optional, Union, Any
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Optional, Union
+
+from mthrottle import Throttle
 from requests import Session
+from requests.adapters import HTTPAdapter
 from requests.exceptions import ReadTimeout
 from urllib3.util import Retry
-from requests.adapters import HTTPAdapter
-from pathlib import Path
-from mthrottle import Throttle
-from datetime import datetime
-import pickle, hashlib, logging
-
 
 throttle_config = {
     "quote": {
